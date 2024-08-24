@@ -37,40 +37,253 @@ drop temporary table nycjobs_temp;
 */
 
 
+
+
+
+
 -- *MAKE SAME GROUP NAMES CONSISTANT (ex: crypto vs cryptocurrency. N/A vs NULL)*
 -- 'Hours/Shift', 'Residency Requirement', 'Job Category', 'Work Location' has same values but different spelling/formatting
 -- in my opinion, it's best to create a new column along with the original column for all 4 of these columns we are targeting for comparison purposes and to avoid confusion down the road.
 
 -- Hours/Shift column
 -- GROUPS:
--- 35 hours
--- 8 AM - 4 PM
--- 9 AM - 5 PM
--- Monday - Friday (no hours given)
--- Monday - Friday 9 AM - 5 PM
--- Monday - Friday 7:30 AM - 3:30 PM
--- 9 AM - 17 PM (can be converted to 9 to 5)
--- To be determined
-
+-- 35 hours a week
+-- 40 hours a week
 select distinct(`Hours/Shift`)
 from nycjobs1;
 
+-- much easier to just transfer all the data from 'Hours/Shift' to the newly generated column 'Hours_Shift_Simplified' and then run distinct(Hours_Shift_Simplified) to view distinct rows while keeping the original column (Hours/Shift) unmodified.
+alter table nycjobs1
+add Hours_Shift_Simplified varchar(1000);
 
--- Residency Requirement column
--- Not critical but please scroll down to the section where I remove non-english characters (Ã¢Â€Â) from cells within certain columns (Residency Requirement column included). The code used remove these non-english characters from the Residency Requirement is not necessary to run prior to running the code from this section since LIKE is used to target everything similar but I have included it in one of the later sections for viewing purposes anyways.
--- Residency Requirement column groups:
--- City Residency is not required for this position.
--- New York City residency is generally required within 90 days of appointment. However, City Employees in certain titles who have worked for the City for 2 continuous years may also be eligible to reside in Nassau, Suffolk, Putnam, Westchester, Rockland, or Orange County. To determine if the residency requirement applies to you, please discuss with the agency representative at the time of interview.
--- New York State Residency is REQUIRED on first day of employment.
---
---
---
---
---
+update nycjobs1
+set Hours_Shift_Simplified = `Hours/Shift`;
 
+select distinct(Hours_Shift_Simplified) -- this can be ran after each update statement to see what else needs to be simplified while Hours/Shift stays as is.
+from nycjobs1;
+
+-- anything with '35' in it. Returns 77 rows
+-- columns condense to:
+-- 35 hours
+-- 35 hours a week
+-- 35 hours 9-5
+-- 35 hours monday - friday
+-- 35 hours monday - friday 9-5
+-- etc.
+select distinct(`Hours_Shift_Simplified`)
+from nycjobs1
+where Hours_Shift_Simplified like '%35%';
+
+update nycjobs1
+set Hours_Shift_Simplified = '35 Hours Per Week'
+where Hours_Shift_Simplified like '%35%'; -- 949 rows affected
+
+-- anything with '40' in it. Returns 16 rows
+-- 40
+-- 40 hours per week/day
+-- 40 hours per week/day shift
+-- 40 hours per week/ may be required to work certain shifts, etc.
+-- 40 hours, mon - fri
+-- etc.
+select distinct(`Hours_Shift_Simplified`)
+from nycjobs1
+where Hours_Shift_Simplified like '%40%';
+
+update nycjobs1
+set Hours_Shift_Simplified = '40 Hours Per Week'
+where Hours_Shift_Simplified like '%40%'; -- 88 rows affected
+
+-- 'Monday to Friday (other variants are Mon-Fri, M-F) 9 to 5' can be converted to '40 hours a week'
+select distinct(`Hours_Shift_Simplified`)
+from nycjobs1
+where Hours_Shift_Simplified like '%Monday%Friday%9%5%'; -- 33 rows returned
+
+select distinct(`Hours_Shift_Simplified`)
+from nycjobs1
+where Hours_Shift_Simplified like '%9%5%Monday%Friday%'; -- 5 rows returned
+
+select distinct(`Hours_Shift_Simplified`)
+from nycjobs1
+where Hours_Shift_Simplified like '%M%F%9%5%'; -- 5 rows returned
+
+update nycjobs1
+set Hours_Shift_Simplified = '40 Hours Per Week'
+where Hours_Shift_Simplified like '%Monday%Friday%9%5%'; -- 86 rows affected
+
+update nycjobs1
+set Hours_Shift_Simplified = '40 Hours Per Week'
+where Hours_Shift_Simplified like '%9%5%Monday%Friday%'; -- 12 rows affected
+
+update nycjobs1
+set Hours_Shift_Simplified = '40 Hours Per Week'
+where Hours_Shift_Simplified like '%M%F%9%5%'; -- 10 rows affected
+
+-- just 9-5
+select distinct(`Hours_Shift_Simplified`)
+from nycjobs1
+where Hours_Shift_Simplified like '%9%5%'; -- 41 rows returned
+
+update nycjobs1
+set Hours_Shift_Simplified = '9 AM - 5 PM'
+where Hours_Shift_Simplified like '%9%5%'; -- 113 rows affected
+
+-- others (UNKNOWN):
+-- Normal Business Hours
+-- Normal Business Schedule
+-- 5-Sep
+-- Varies
+-- Day
+-- Day - Due to the necessary technical support duties of this position in a 24/7 operation, candidate may be required to work various shifts such as weekends and/or nights/evenings
+-- Day - Due to the necessary management duties of this position in a 24/7 operation, candidate may be required to be on call and work various shifts such as weekends and/or nights/evenings
+-- 
+-- 
+-- 
+-- 
+-- 
+-- 
+-- 
+-- 
+-- 
+
+
+
+
+
+
+
+
+
+
+
+
+-- Residency Requirement columns:
+-- New York City Residency is not required for this position.
+-- New York City residency is generally required within 90 days of appointment. However, City Employees in certain titles who have worked for the City for 2 continuous years may also be eligible to reside in Nassau, Suffolk, Putnam, Westchester, Rockland, or Orange County.
+-- New York City Residency is required for this position.
+-- N/A
 select distinct(`Residency Requirement`)
 from nycjobs1
 order by `Residency Requirement`;
+
+select `Residency Requirement`
+from nycjobs1
+order by `Residency Requirement`;
+
+-- targets:
+-- New York City Residency is not required for this position
+-- City Residency is not required for this position
+-- New York City Residency is not required for this title.
+-- NYC RESIDENCY IS NOT REQUIRED FOR THIS TITLE.
+-- NEW YORK CITY RESIDENCY IS NOT REQUIRED FOR THIS TITLE..
+-- New York City residency is not required
+-- NYC Residency is not required for this position.
+-- New York City residency is currently not required.
+-- NYC residency is not required.
+
+-- New York residency requirement is waived for this position.
+
+-- The is no residency requirement for this position.
+-- The Trust has no residency requirements.
+-- There is no NYC Residency requirement for this position.
+-- There is no residency requirement for
+-- There is no residency requirement for this position.
+-- There is no residency requirement for this title.
+-- There is no residency requirements for this title.
+
+-- This position is exempt from NYC residency requirements.
+select `Residency Requirement`
+from nycjobs1
+where `Residency Requirement` like '%not required%'; 
+
+update nycjobs1
+set `Residency Requirement` = 'New York City Residency is not required for this position.'
+where `Residency Requirement` like '%not required%'; 
+
+update nycjobs1
+set `Residency Requirement` = 'New York City Residency is not required for this position.'
+where `Residency Requirement` like '%New York residency requirement is waived for this position%'; 
+
+update nycjobs1
+set `Residency Requirement` = 'New York City Residency is not required for this position.'
+where `Residency Requirement` like '%New York residency requirement is waived for this position%'; 
+
+update nycjobs1
+set `Residency Requirement` = 'New York City Residency is not required for this position.'
+where `Residency Requirement` like '%no%requirement%';
+
+update nycjobs1
+set `Residency Requirement` = 'New York City Residency is not required for this position.'
+where `Residency Requirement` like '%exempt%';
+
+-- targets:
+-- New York City residency is generally required within 90 days of appointment. However, City Employees in certain titles who have worked for the City for 2 continuous years may also be eligible to reside in Nassau, Suffolk, Putnam, Westchester, Rockland, or Orange County. To determine if the residency requirement applies to you, please discuss with the agency representative at the time of interview.
+-- New York City residency is required within 90 days of appointment.
+-- Residency in New York City, Nassau, Orange, Rockland, Suffolk, Putnam or Westchester counties required for employees with over two years of city service. New York City residency required within 90 days of hire for all other candidates.
+
+-- Except as otherwise provided herein, a person serving in a mayoral agency in any of the following civil service or office titles shall be a resident of the City on the date that he or she assumes such title or shall establish city residence within ninety...
+select distinct(`Residency Requirement`)
+from nycjobs1
+where `Residency Requirement` like '%90 days%'; 
+
+update nycjobs1
+set `Residency Requirement` = 'New York City residency is generally required within 90 days of appointment. However, City Employees in certain titles who have worked for the City for 2 continuous years may also be eligible to reside in Nassau, Suffolk, Putnam, Westchester, Rockland, or Orange County.'
+where `Residency Requirement` like '%90 days%';
+
+
+update nycjobs1
+set `Residency Requirement` = 'New York City residency is generally required within 90 days of appointment. However, City Employees in certain titles who have worked for the City for 2 continuous years may also be eligible to reside in Nassau, Suffolk, Putnam, Westchester, Rockland, or Orange County.'
+where `Residency Requirement` like '%ninety%';
+
+-- targets:
+-- New York City Residency is required.  Except as otherwise provided herein, a person serving in a mayoral agency in any of the following civil service or office titles shall be a resident of the City on the date that he or she assumes such title or shall establish city residence within ninety days after such date and shall thereafter maintain city residency for as long as he or she serves in such title: agency heads, including but not limited to Commissioner, Director and Executive Director, First Deputy Commissioner, Executive Deputy Commissioner, Deputy Commissioner, General Counsel, Borough Commissioner, Assistant Deputy Commissioner, Associate Commissioner, Assistant Commissioner, and other senior level staff titles, identified on a list established pursuant to section 2(b) of this Order.
+-- New York State Residency is required for this position.
+-- New York State residency is required.
+-- New York State Residency is REQUIRED on first day of employment.
+-- New York State Residency is REQUIRED on the first day of employment.
+-- NYC Residency is required for this position.
+-- Residency requirement for this position.
+
+-- U.S. citizenship and New York State residency are required as of first day of employment
+-- US Citizenship and New York State Residency are required as of first day of employment
+
+-- Residency requirement for this position.
+select distinct(`Residency Requirement`)
+from nycjobs1
+where `Residency Requirement` like '%is required%'; 
+
+update nycjobs1
+set `Residency Requirement` = 'New York City Residency is required for this position.'
+where `Residency Requirement` like '%is required%'; 
+
+update nycjobs1
+set `Residency Requirement` = 'New York City Residency is required for this position.'
+where `Residency Requirement` like '%are required%'; 
+
+update nycjobs1
+set `Residency Requirement` = 'New York City Residency is required for this position.'
+where `Residency Requirement` like '%residency requirement%'; 
+
+-- others not actually related to residency requirements:
+-- TBD
+-- The City of New York is an inclusive equal opportunity employer committed to recruiting and retaining a diverse workforce and providing a work environment that is free from discrimination and harassment based upon any legally protected status or protected characteristic, including but not limited to an individual's sex, race, color, ethnicity, national origin, age, religion, disability, sexual orientation, veteran status, gender identity, or pregnancy.
+-- We appreciate your interest in a position with the Bronx District Attorney's Office. Click Apply for Job to apply.  **LOAN FORGIVENESS: The federal government provides student loan forgiveness through its Public Service Loan Forgiveness Program (PLF) to all qualifying public service employees. Working with DCWP qualifies you as a public service employee and you may be able to take advantage of this program while working full-time and meeting the program's other requirements. Please visit the Public Service Loan Forgiveness Program site to view the eligibility requirements: https://studentaid.gov/manage-loans/forgiveness-cancellation/public-service.
+update nycjobs1
+set `Residency Requirement` = 'N/A'
+where `Residency Requirement` = 'TBD'; 
+
+update nycjobs1
+set `Residency Requirement` = 'N/A'
+where `Residency Requirement` = "The City of New York is an inclusive equal opportunity employer committed to recruiting and retaining a diverse workforce and providing a work environment that is free from discrimination and harassment based upon any legally protected status or protected characteristic, including but not limited to an individual's sex, race, color, ethnicity, national origin, age, religion, disability, sexual orientation, veteran status, gender identity, or pregnancy."; 
+
+update nycjobs1 
+set `Residency Requirement` = 'N/A'
+where `Residency Requirement` = "We appreciate your interest in a position with the Bronx District Attorney's Office. Click Apply for Job to apply.  **LOAN FORGIVENESS: The federal government provides student loan forgiveness through its Public Service Loan Forgiveness Program (PLF) to all qualifying public service employees. Working with DCWP qualifies you as a public service employee and you may be able to take advantage of this program while working full-time and meeting the program's other requirements. Please visit the Public Service Loan Forgiveness Program site to view the eligibility requirements: https://studentaid.gov/manage-loans/forgiveness-cancellation/public-service."; 
+
+
+
+
+
+
 
 -- Job Category column
 -- many different sectors within industry. Example: Communications & Intergovernmental Affairs in x y z
