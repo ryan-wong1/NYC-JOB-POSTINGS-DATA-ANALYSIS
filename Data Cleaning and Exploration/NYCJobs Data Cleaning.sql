@@ -3,6 +3,7 @@ select *
 from nycjobs;
 
 
+
 -- CREATE COPY OF DATASET
 create table nycjobs1 (
 select *
@@ -11,6 +12,7 @@ from nycjobs
 
 select *
 from nycjobs1;
+
 
 
 -- *REMOVE ALL DUPLICATE ROWS*
@@ -38,17 +40,30 @@ drop temporary table nycjobs_temp;
 
 
 
-
-
-
 -- *MAKE SAME GROUP NAMES CONSISTANT (ex: crypto vs cryptocurrency. N/A vs NULL)*
 -- 'Hours/Shift', 'Residency Requirement', 'Job Category', 'Work Location' has same values but different spelling/formatting
 -- in my opinion, it's best to create a new column along with the original column for all 4 of these columns we are targeting for comparison purposes and to avoid confusion down the road.
 
 -- Hours/Shift column
 -- GROUPS:
--- 35 hours a week
--- 40 hours a week
+-- 35 Hours Per Week
+-- 40 Hours Per Week
+-- 36 Hours Per Week
+-- 17 Hours Per Week
+-- 20 Hours Per Week
+-- 32 Hours Per Week
+-- 21 Hours Per Week
+-- 25 Hours Per Week
+-- 50 Hours Per Week
+-- 17.5 Hours Per Week
+-- 9 AM to 5 PM
+-- 9 AM to 6 PM
+-- 8 AM to 4 PM
+-- 8 AM - 3 PM 
+-- 7 AM - 3 PM
+-- 7:30 AM to 3:30 PM
+-- n/a
+
 select distinct(`Hours/Shift`)
 from nycjobs1;
 
@@ -69,14 +84,31 @@ from nycjobs1;
 -- 35 hours 9-5
 -- 35 hours monday - friday
 -- 35 hours monday - friday 9-5
+-- Monday “ Friday 8am to 3:30pm
 -- etc.
 select distinct(`Hours_Shift_Simplified`)
 from nycjobs1
 where Hours_Shift_Simplified like '%35%';
 
+select distinct(`Hours_Shift_Simplified`) -- Monday “ Friday 8am to 3:30pm
+from nycjobs1
+where Hours_Shift_Simplified like '%8%3:30%';
+
+select distinct(`Hours_Shift_Simplified`) -- Monday - Friday; 0730 x 1500
+from nycjobs1
+where Hours_Shift_Simplified = 'Monday - Friday; 0730 x 1500'; -- 1 row returned
+
 update nycjobs1
 set Hours_Shift_Simplified = '35 Hours Per Week'
 where Hours_Shift_Simplified like '%35%'; -- 949 rows affected
+
+update nycjobs1
+set Hours_Shift_Simplified = '35 Hours Per Week'
+where Hours_Shift_Simplified like '%8%3:30%'; -- 2 rows affected
+
+update nycjobs1
+set Hours_Shift_Simplified = '35 Hours Per Week'
+where Hours_Shift_Simplified = 'Monday - Friday; 0730 x 1500'; -- 2 rows affected
 
 -- anything with '40' in it. Returns 16 rows
 -- 40
@@ -93,7 +125,7 @@ update nycjobs1
 set Hours_Shift_Simplified = '40 Hours Per Week'
 where Hours_Shift_Simplified like '%40%'; -- 88 rows affected
 
--- 'Monday to Friday (other variants are Mon-Fri, M-F) 9 to 5' can be converted to '40 hours a week'
+-- 'Monday to Friday 9 to 5' and other 40 hours a week equivalencies can be converted to '40 hours a week'
 select distinct(`Hours_Shift_Simplified`)
 from nycjobs1
 where Hours_Shift_Simplified like '%Monday%Friday%9%5%'; -- 33 rows returned
@@ -105,6 +137,22 @@ where Hours_Shift_Simplified like '%9%5%Monday%Friday%'; -- 5 rows returned
 select distinct(`Hours_Shift_Simplified`)
 from nycjobs1
 where Hours_Shift_Simplified like '%M%F%9%5%'; -- 5 rows returned
+
+select distinct(`Hours_Shift_Simplified`)
+from nycjobs1
+where Hours_Shift_Simplified like '%4%12%'; -- 1 row returned
+
+select distinct(`Hours_Shift_Simplified`) -- Mon - Fri, 7:30am - 3:30pm
+from nycjobs1
+where Hours_Shift_Simplified like '%Mon%Fri%7:30%3:30%'; -- 1 row returned
+
+select distinct(`Hours_Shift_Simplified`) -- 9:00am-17:00pm (Monday “ Friday)
+from nycjobs1
+where Hours_Shift_Simplified like '%9%17%Mon%Fri%';
+
+select distinct(`Hours_Shift_Simplified`) -- Mon - Fri, 6:00am - 14:30pm
+from nycjobs1
+where Hours_Shift_Simplified like '%Mon%Fri%6%14%';
 
 update nycjobs1
 set Hours_Shift_Simplified = '40 Hours Per Week'
@@ -118,6 +166,22 @@ update nycjobs1
 set Hours_Shift_Simplified = '40 Hours Per Week'
 where Hours_Shift_Simplified like '%M%F%9%5%'; -- 10 rows affected
 
+update nycjobs1
+set Hours_Shift_Simplified = '40 Hours Per Week'
+where Hours_Shift_Simplified like '%4%12%'; -- 2 row affected
+
+update nycjobs1
+set Hours_Shift_Simplified = '40 Hours Per Week'
+where Hours_Shift_Simplified like '%Mon%Fri%7:30%3:30%'; -- 2 row affected
+
+update nycjobs1
+set Hours_Shift_Simplified = '40 Hours Per Week'
+where Hours_Shift_Simplified like '%9%17%Mon%Fri%'; -- 6 row affected
+
+update nycjobs1
+set Hours_Shift_Simplified = '40 Hours Per Week'
+where Hours_Shift_Simplified like '%Mon%Fri%6%14%'; -- 2 row affected
+
 -- just 9-5
 select distinct(`Hours_Shift_Simplified`)
 from nycjobs1
@@ -127,34 +191,289 @@ update nycjobs1
 set Hours_Shift_Simplified = '9 AM - 5 PM'
 where Hours_Shift_Simplified like '%9%5%'; -- 113 rows affected
 
--- others (UNKNOWN):
--- Normal Business Hours
--- Normal Business Schedule
--- 5-Sep
--- Varies
--- Day
--- Day - Due to the necessary technical support duties of this position in a 24/7 operation, candidate may be required to work various shifts such as weekends and/or nights/evenings
--- Day - Due to the necessary management duties of this position in a 24/7 operation, candidate may be required to be on call and work various shifts such as weekends and/or nights/evenings
--- 
--- 
--- 
--- 
--- 
--- 
--- 
--- 
--- 
+select distinct(`Hours_Shift_Simplified`)
+from nycjobs1
+where Hours_Shift_Simplified = '9:00am-17:00pm (Flexible)'; -- 1 row returned
 
+update nycjobs1
+set Hours_Shift_Simplified = '9 AM - 5 PM'
+where Hours_Shift_Simplified = '9:00am-17:00pm (Flexible)'; -- 28 rows affected
 
+select distinct(`Hours_Shift_Simplified`)
+from nycjobs1
+where Hours_Shift_Simplified = '8:30 “ 5pm with Flex Schedules'; -- 1 row returned
 
+update nycjobs1
+set Hours_Shift_Simplified = '9 AM - 5 PM'
+where Hours_Shift_Simplified = '8:30 “ 5pm with Flex Schedules'; -- 2 rows affected. This is 9-5 equivalency not including the 30 min lunch
 
+-- 8 to 4, mon - fri and sun - thurs can be converted to 40 hours a week
+select distinct(`Hours_Shift_Simplified`)
+from nycjobs1
+where Hours_Shift_Simplified like '%Monday%Friday%8%4%'; -- 0 rows returned
 
+select distinct(`Hours_Shift_Simplified`)
+from nycjobs1
+where Hours_Shift_Simplified like '%8%4%Monday%Friday%'; -- 0 rows returned
 
+select distinct(`Hours_Shift_Simplified`)
+from nycjobs1
+where Hours_Shift_Simplified like '%M%F%8%4%'; -- 1 row returned
 
+select distinct(`Hours_Shift_Simplified`)
+from nycjobs1
+where Hours_Shift_Simplified like '%Sun%Thurs%8%4%'; -- 1 row returned
 
+update nycjobs1
+set Hours_Shift_Simplified = '40 Hours Per Week'
+where Hours_Shift_Simplified like '%M%F%8%4%'; -- 2 rows affected
 
+update nycjobs1
+set Hours_Shift_Simplified = '40 Hours Per Week'
+where Hours_Shift_Simplified like '%Sun%Thurs%8%4%'; -- 2 rows affected
 
+-- just 8-4
+select distinct(`Hours_Shift_Simplified`)
+from nycjobs1
+where Hours_Shift_Simplified like '%8%4%'
+and Hours_Shift_Simplified <> "This position is a 3-day work week, 7:30 am until 8:00 pm and includes weekends and holidays. The days worked will rotate on a 4 week predetermined schedule (4 weeks Mon thru Wed then 4 weeks Thu thru Sat.)"; -- 6 rows returned
 
+update nycjobs1
+set Hours_Shift_Simplified = '8 AM - 4 PM'
+where Hours_Shift_Simplified like '%8%4%'
+and Hours_Shift_Simplified <> "This position is a 3-day work week, 7:30 am until 8:00 pm and includes weekends and holidays. The days worked will rotate on a 4 week predetermined schedule (4 weeks Mon thru Wed then 4 weeks Thu thru Sat.)"; -- 15 rows affected
+
+-- 36 Hours Per Week
+-- This position is a 3-day work week, 7:30 am until 8:00 pm and includes weekends and holidays. The days worked will rotate on a 4 week predetermined schedule (4 weeks Mon thru Wed then 4 weeks Thu thru Sat.)
+select Hours_Shift_Simplified
+from nycjobs1
+where Hours_Shift_Simplified = 'This position is a 3-day work week, 7:30 am until 8:00 pm and includes weekends and holidays. The days worked will rotate on a 4 week predetermined schedule (4 weeks Mon thru Wed then 4 weeks Thu thru Sat.)';
+
+update nycjobs1
+set Hours_Shift_Simplified = '36 Hours Per Week'
+where Hours_Shift_Simplified = 'This position is a 3-day work week, 7:30 am until 8:00 pm and includes weekends and holidays. The days worked will rotate on a 4 week predetermined schedule (4 weeks Mon thru Wed then 4 weeks Thu thru Sat.)'; -- 2 rows affected
+
+-- 17 Hours Per Week
+-- 17 hours per week Monday “ Friday
+select Hours_Shift_Simplified
+from nycjobs1
+where Hours_Shift_Simplified = '17 hours per week Monday “ Friday';
+
+update nycjobs1
+set Hours_Shift_Simplified = '17 Hours Per Week'
+where Hours_Shift_Simplified = '17 hours per week Monday “ Friday'; -- 2 rows affected
+
+-- 20 Hours Per Week
+-- 20 Hours Per Week
+-- Part-Time Position “ 20 hours/week.
+select Hours_Shift_Simplified
+from nycjobs1
+where Hours_Shift_Simplified = 'Part-Time Position “ 20 hours/week.';
+
+update nycjobs1
+set Hours_Shift_Simplified = '20 Hours Per Week'
+where Hours_Shift_Simplified = 'Part-Time Position “ 20 hours/week.'; -- 4 rows affected
+
+-- 32 Hours Per Week
+-- 32 hours/variable, including nights/weekends
+select Hours_Shift_Simplified
+from nycjobs1
+where Hours_Shift_Simplified = '32 hours/variable, including nights/weekends';
+
+update nycjobs1
+set Hours_Shift_Simplified = '32 Hours Per Week'
+where Hours_Shift_Simplified = '32 hours/variable, including nights/weekends'; -- 2 rows affected
+
+-- 9 to 6 (9 hours per day, 45 hours per week)
+-- Monday- Friday 9:00AM-6:00PM or 9:30AM- 6:00PM
+select Hours_Shift_Simplified
+from nycjobs1
+where Hours_Shift_Simplified = 'Monday- Friday 9:00AM-6:00PM or 9:30AM- 6:00PM';
+
+update nycjobs1
+set Hours_Shift_Simplified = '45 Hours Per Week'
+where Hours_Shift_Simplified = 'Monday- Friday 9:00AM-6:00PM or 9:30AM- 6:00PM'; -- 2 rows affected
+
+-- 21 Hours Per Week
+-- 21 Hours per Week
+select Hours_Shift_Simplified
+from nycjobs1
+where Hours_Shift_Simplified = '21 Hours per Week';
+
+update nycjobs1
+set Hours_Shift_Simplified = '21 Hours Per Week'
+where Hours_Shift_Simplified = '21 Hours per Week'; -- 2 rows affected
+
+-- 25 Hours Per Week
+-- 25 Hours Per Week
+-- Hours: 25 Hours Per Week  Shift: 5 Hours a Day
+select Hours_Shift_Simplified
+from nycjobs1
+where Hours_Shift_Simplified = 'Hours: 25 Hours Per Week  Shift: 5 Hours a Day';
+
+update nycjobs1
+set Hours_Shift_Simplified = '25 Hours Per Week'
+where Hours_Shift_Simplified = 'Hours: 25 Hours Per Week  Shift: 5 Hours a Day'; -- 2 rows affected
+
+-- 50 Hours Per Week
+-- 0900 - 1700 hours, Monday - Friday
+select Hours_Shift_Simplified
+from nycjobs1
+where Hours_Shift_Simplified = '0900 - 1700 hours, Monday - Friday';
+
+update nycjobs1
+set Hours_Shift_Simplified = '50 Hours Per Week'
+where Hours_Shift_Simplified = '0900 - 1700 hours, Monday - Friday'; 
+
+-- 8 AM - 3 PM 
+-- 08:00am-1530pm- Lunch: 12:00 “ 12:30
+select Hours_Shift_Simplified
+from nycjobs1
+where Hours_Shift_Simplified = '08:00am-1530pm- Lunch: 12:00 “ 12:30';
+
+update nycjobs1
+set Hours_Shift_Simplified = '8 AM - 3 PM '
+where Hours_Shift_Simplified = '08:00am-1530pm- Lunch: 12:00 “ 12:30'; 
+
+-- 17.5 Hours Per Week
+-- 17.50 Hours weekly (This is a Part-time position)
+select Hours_Shift_Simplified
+from nycjobs1
+where Hours_Shift_Simplified = '17.50 Hours weekly (This is a Part-time position)';
+
+update nycjobs1
+set Hours_Shift_Simplified = '17.5 Hours Per Week'
+where Hours_Shift_Simplified = '17.50 Hours weekly (This is a Part-time position)'; 
+
+-- The following below lack clarity. Different companies have different meanings behind what a 30 min lunch means and whether to include it or disclude it within the shift itself.
+-- Due to the inconsistancies with matching everything up, the 6:30 group is to be converted into the 7-3 while everything else stays as is. 
+-- 7:30 “ 3:30  (1/2 hour lunch)                                    - 7:30 to 3:30 (8 hour shift)
+-- 7:30am “ 3:00pm       Lunch: ‚½ hour                             - 7:30 to 3:30 (8 hour shift)
+-- 7:30 AM to 3:30 PM                                               - 7:30 to 3:30 (8 hour shift)
+-- 7:30 “ 3;30  (1/2 hour lunch)                                    - 7:30 to 3:30 (8 hour shift)
+         
+-- 0700-1500                                                        - 7 to 3 (8 hour shift)
+-- 7:00 am“ 14:30pm   Lunch  ‚½ hour                                - 7 to 3 (8 hour shift)
+-- 7:00 -14:30  Lunch  ‚½ hour                                      - 7 to 3 (8 hour shift)
+
+-- 6:30 AM - 3:00 PM                                                - 6:30 to 2:30 (8 hour shift)
+-- Hours:  0630 - 1500                                              - 6:30 to 2:30 (8 hour shift)
+-- Hours-  0630 - 1500
+select Hours_Shift_Simplified
+from nycjobs1
+where Hours_Shift_Simplified in (
+'7:30 “ 3:30  (1/2 hour lunch)',  
+'7:30am “ 3:00pm       Lunch: ‚½ hour',  
+'7:30 AM to 3:30 PM',    
+'7:30 “ 3;30  (1/2 hour lunch)'  
+);
+
+select Hours_Shift_Simplified
+from nycjobs1
+where Hours_Shift_Simplified in (
+'0700-1500', 
+'7:00 am“ 14:30pm   Lunch  ‚½ hour',   
+'7:00 -14:30  Lunch  ‚½ hour',   
+'6:30 AM - 3:00 PM',    
+'Hours:  0630 - 1500',
+'Hours-  0630 - 1500'
+);
+
+update nycjobs1
+set Hours_Shift_Simplified = '7:30 AM - 3:30 PM' -- 13 rows affected
+where Hours_Shift_Simplified in (
+'7:30 “ 3:30  (1/2 hour lunch)',  
+'7:30am “ 3:00pm       Lunch: ‚½ hour',  
+'7:30 AM to 3:30 PM',    
+'7:30 “ 3;30  (1/2 hour lunch)'  
+); 
+
+update nycjobs1
+set Hours_Shift_Simplified = '7 AM - 3 PM' -- 8 rows affected
+where Hours_Shift_Simplified in (
+'0700-1500', 
+'7:00 am“ 14:30pm   Lunch  ‚½ hour',   
+'7:00 -14:30  Lunch  ‚½ hour',   
+'6:30 AM - 3:00 PM',    
+'Hours:  0630 - 1500',
+'Hours-  0630 - 1500'      
+);
+
+-- others (N/A):
+select Hours_Shift_Simplified -- 120 rows returned
+from nycjobs1
+where Hours_Shift_Simplified in (
+'Normal Business Hours',
+'Normal Business Schedule',
+'Day - Due to the necessary support duties of this position in a 24/7 operation, the candidate may be required to work various shifts such as weekends and/or nights/evenings.',
+'5-Sep',
+'Due to the necessary technical duties of this position in a 24/7 operation, candidates may be required to work various shifts such as weekends and/or nights/evenings.',
+'Day - Due to the necessary technical support duties of this position in a 24/7 operation, candidate may be required to work various shifts such as weekends and/or nights/evenings.',
+'Day - Due to the necessary technical support duties of this position in a 24/7 operation, candidate may be required to work various shifts such as weekends and/or nights/evenings',
+'Unless otherwise indicated, all positions require a five-day work week.',
+'Varies',
+'Day',
+'Day - Due to the necessary management duties of this position in a 24/7 operation, candidate may be required to be on call and work various shifts such as weekends and/or nights/evenings',
+'Day - Due to the necessary management duties of this position in a 24/7 operation, candidate may be required to be on call and work various shifts such as weekends and/or nights/evenings.',
+'Day - Due to the necessary duties of this position in a 24/7 operation, candidate may be required to work various shifts such as weekends and/or nights/evenings.',
+'Day - Due to the necessary technical management duties of this position in a 24/7 operation, candidate may be required to be on call and/or work various shifts such as weekends and/or nights/evenings.',
+'Day - Due to the necessary support duties of this position in a 24/7 operation, candidate may be required to work various shifts such as weekends and/or nights/evenings',
+'various',
+'We have only Night shifts available.',
+'Managerial Hours',
+'Unless otherwise indicated, all positions require a five-day workweek.',
+'Monday “ Friday',
+'To be determine.',
+'Due to the necessary technical duties of this position in a 24/7 operation, candidate may be required to work various shifts such as weekends and/or nights/evenings.',
+'To be determine',
+'Day - Due to the necessary technical duties of this position in a 24/7 operation, candidate may be required to be on call and/or work various shifts such as weekends and/or evenings.',
+'Day - Due to the necessary support duties of this position in a 24/7 operation, candidate may be required to work various shifts such as weekends and/or nights/evenings.',
+'Managerial Work Schedule',
+'Day - Due to the necessary technical duties of this position in a 24/7 operation, candidate may be required to work various shifts such as weekends and/or nights/evenings',
+'Day - Due to the necessary duties of this position in a 24/7 operation, candidate may be required to work weekends and/or nights/evenings.',
+'	We have only Night shifts available.'
+);
+
+update nycjobs1
+set Hours_Shift_Simplified = 'N/A'
+where Hours_Shift_Simplified in (
+'Normal Business Hours',
+'Normal Business Schedule',
+'Day - Due to the necessary support duties of this position in a 24/7 operation, the candidate may be required to work various shifts such as weekends and/or nights/evenings.',
+'5-Sep',
+'Due to the necessary technical duties of this position in a 24/7 operation, candidates may be required to work various shifts such as weekends and/or nights/evenings.',
+'Day - Due to the necessary technical support duties of this position in a 24/7 operation, candidate may be required to work various shifts such as weekends and/or nights/evenings.',
+'Day - Due to the necessary technical support duties of this position in a 24/7 operation, candidate may be required to work various shifts such as weekends and/or nights/evenings',
+'Unless otherwise indicated, all positions require a five-day work week.',
+'Varies',
+'Day',
+'Day - Due to the necessary management duties of this position in a 24/7 operation, candidate may be required to be on call and work various shifts such as weekends and/or nights/evenings',
+'Day - Due to the necessary management duties of this position in a 24/7 operation, candidate may be required to be on call and work various shifts such as weekends and/or nights/evenings.',
+'Day - Due to the necessary duties of this position in a 24/7 operation, candidate may be required to work various shifts such as weekends and/or nights/evenings.',
+'Day - Due to the necessary technical management duties of this position in a 24/7 operation, candidate may be required to be on call and/or work various shifts such as weekends and/or nights/evenings.',
+'Day - Due to the necessary support duties of this position in a 24/7 operation, candidate may be required to work various shifts such as weekends and/or nights/evenings',
+'various',
+'We have only Night shifts available.',
+'Managerial Hours',
+'Unless otherwise indicated, all positions require a five-day workweek.',
+'Monday “ Friday',
+'To be determine.',
+'Due to the necessary technical duties of this position in a 24/7 operation, candidate may be required to work various shifts such as weekends and/or nights/evenings.',
+'To be determine',
+'Day - Due to the necessary technical duties of this position in a 24/7 operation, candidate may be required to be on call and/or work various shifts such as weekends and/or evenings.',
+'Day - Due to the necessary support duties of this position in a 24/7 operation, candidate may be required to work various shifts such as weekends and/or nights/evenings.',
+'Managerial Work Schedule',
+'Day - Due to the necessary technical duties of this position in a 24/7 operation, candidate may be required to work various shifts such as weekends and/or nights/evenings',
+'Day - Due to the necessary duties of this position in a 24/7 operation, candidate may be required to work weekends and/or nights/evenings.',
+'	We have only Night shifts available.'
+);
+
+/*
+if wanting to delete the original Hours/Shift column (which I decided to still include in final dataset)
+
+alter table nycjobs1
+drop column `Hours/Shift`
+*/
 
 -- Residency Requirement columns:
 -- New York City Residency is not required for this position.
@@ -279,12 +598,6 @@ update nycjobs1
 set `Residency Requirement` = 'N/A'
 where `Residency Requirement` = "We appreciate your interest in a position with the Bronx District Attorney's Office. Click Apply for Job to apply.  **LOAN FORGIVENESS: The federal government provides student loan forgiveness through its Public Service Loan Forgiveness Program (PLF) to all qualifying public service employees. Working with DCWP qualifies you as a public service employee and you may be able to take advantage of this program while working full-time and meeting the program's other requirements. Please visit the Public Service Loan Forgiveness Program site to view the eligibility requirements: https://studentaid.gov/manage-loans/forgiveness-cancellation/public-service."; 
 
-
-
-
-
-
-
 -- Job Category column
 -- many different sectors within industry. Example: Communications & Intergovernmental Affairs in x y z
 -- can create a new individual column with just the industry and keep the original column as is to view specific sector within x industry. No 'duplicates' present within original 'Job Category' column
@@ -368,6 +681,7 @@ from nycjobs1
 order by `Work Location`; -- no 'duplicates' present
 
 
+
 -- *FORMAT DATES (1/23/2024, January 23, 2024, etc)*
 -- Posting Date, Posting Updated, and Process Date all in same mm/dd/yyyy format. Post Until in dd-MONTH-yy format. Convert to mm/dd/yyyy.
 select `Posting Date`,`Posting Updated`,`Process Date`,`Post Until`
@@ -380,6 +694,7 @@ from nycjobs1;
 update nycjobs1
 set `Post Until` = date_format(`Post Until`, '%m/%d/%y')  
 */
+
 
 
 -- *CHECK FOR CORRECT VARIABLE TYPES (names are strings, numbers are integers, dates are dates, add $ in front of currency, etc)*
@@ -426,6 +741,7 @@ where table_name = 'nycjobs';
 */
 
 
+
 -- *REMOVE / FILL IN FOR MISSING VALUES (NULL's, " "). Replace with 0, etc.* Column names of 'Hours/Shift', 'Work Location 1', 'Post Until' have blank cells.
 select * 
 from nycjobs1
@@ -452,6 +768,7 @@ set `Post Until` = 'N/A'
 where `Post Until` = ''; -- 3576 rows affected
 
 
+
 -- *REMOVE EXTRA / UNNECESSARY SPACES (ex: '   John')*
 -- no unnecessary spaces found within this dataset. Code is below if wanting to explore however.
 select trim(`Work Location 1`) -- 'Work Location 1' can be replaced with any column name to trim any unnecessary spaces from existance.
@@ -461,6 +778,7 @@ from nycjobs1;
 update nycjobs1
 set `Work Location 1` = trim(`Work Location 1`)
 */
+
 
 
 -- Delete non english symbols (Ã¢Â€Â™) throughout dataset. These non english symbols appear within multiple columns but some columns were removed due to it not being relevant / important for analysis. Will just be focusing on columns that have these symbols that were not removed. Please scroll down to 'REMOVE ALL IRRELEVANT COLUMNS' to see the columns that were removed from the finalized dataset.
@@ -525,6 +843,7 @@ update nycjobs1
 set `Residency Requirement` = replace(`Residency Requirement`,'€',''); -- 5 rows updated
 
 
+
 -- *REMOVE ALL IRRELEVANT COLUMNS*
 -- 'Title Code No', 'Job Description', 'Preferred Skills', 'Additional Information', 'To Apply', 'Recruitment Contact', likely not needed for analysis. Content in rows are not repeats across this dataset, too many inconsistancies. 
 alter table nycjobs1
@@ -534,6 +853,7 @@ drop column `Preferred Skills`,
 drop column `Additional Information`,
 drop column `To Apply`,
 drop column `Recruitment Contact`;
+
 
 
 -- *Spelling conversions (ex: in to inches, yr to year, etc)*
@@ -559,13 +879,70 @@ update nycjobs1
 set `Business Title` = upper(`Business Title`);
 
 
+
 -- *STANDARDIZE VALUES (Celsius to Fahrenheit, 1 out of 5 -> 20 out of 100, etc)*
 -- Some salaries are yearly vs hourly. convert all to hourly
 -- find cells with 2 characters (ex: 25) * hours per year = yearly salary
 -- not all cells with hourly pay (2 characters) have data in Hours/Shift. Can create a new individual column converting hourly pay * 40 hours a week if data in Hours/Shift is N/A
-select Salary_Range_From, Salary_Range_To, `Hours/Shift`
+select Salary_Range_From, Hours_Shift_Simplified
 from nycjobs1
 where length(Salary_Range_From) <= 3
-OR length(Salary_Range_To) <= 3;
+and Hours_Shift_Simplified != 'N/A';
 
- 
+select Salary_Range_To, Hours_Shift_Simplified
+from nycjobs1
+where length(Salary_Range_To) <= 3
+and Hours_Shift_Simplified != 'N/A';
+
+alter table nycjobs1 -- create new Salary Range From column
+add Salary_Range_From_Modified varchar(255);
+
+alter table nycjobs1 -- create new Salary Range To column
+add Salary_Range_To_Modified varchar(255);
+
+update nycjobs1 -- transfer from original to modified
+set Salary_Range_From_Modified = Salary_Range_From;
+
+update nycjobs1 -- transfer from original to modified
+set Salary_Range_To_Modified = Salary_Range_To;
+
+/*
+alter table nycjobs1
+drop column Salary_Range_From_Modified,
+drop column Salary_Range_To_Modified;
+*/
+
+select
+concat('$',cast(cast(replace(Salary_Range_From, '$', '') as decimal(10,2)) * 52 * 
+cast(substring_index(Hours_Shift_Simplified, ' ', 1) as decimal(10,2)) as unsigned)) as yearly_salary
+from nycjobs1
+where length(Salary_Range_From) <= 3
+and Hours_Shift_Simplified != 'N/A';
+
+select
+concat('$',cast(cast(replace(Salary_Range_To, '$', '') as decimal(10,2)) * 52 * 
+cast(substring_index(Hours_Shift_Simplified, ' ', 1) as decimal(10,2)) as unsigned)) as yearly_salary
+from nycjobs1
+where length(Salary_Range_To) <= 3
+and Hours_Shift_Simplified != 'N/A';
+
+update nycjobs1 -- 82 rows modified
+set Salary_Range_From_Modified = concat('$',cast(cast(replace(Salary_Range_From, '$', '') as decimal(10,2)) * 52 * 
+cast(substring_index(Hours_Shift_Simplified, ' ', 1) as decimal(10,2)) as unsigned))
+where length(Salary_Range_From) <= 3
+and Hours_Shift_Simplified != 'N/A'; 
+
+update nycjobs1 -- 82 rows modified
+set Salary_Range_To_Modified = concat('$',cast(cast(replace(Salary_Range_To, '$', '') as decimal(10,2)) * 52 * 
+cast(substring_index(Hours_Shift_Simplified, ' ', 1) as decimal(10,2)) as unsigned))
+where length(Salary_Range_To) <= 3
+and Hours_Shift_Simplified != 'N/A'; 
+
+-- to see the changes w/ original salary columns to modified
+select Salary_Range_From, Salary_Range_From_Modified, Salary_Range_To, Salary_Range_To_Modified, Hours_Shift_Simplified
+from nycjobs1
+where Hours_Shift_Simplified != 'N/A';
+
+-- View all final
+select *
+from nycjobs1;
