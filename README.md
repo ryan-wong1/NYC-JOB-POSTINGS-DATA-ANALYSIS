@@ -18,4 +18,4 @@ Dataset Files:
 
 - NYCJobs Cleaned.csv = The finalized cleaned dataset. Please view 'NYCJobs Data Cleaning.sql' to see the code used for the data cleaning process. The Kaggle link below contains all the contents from this csv file but in a much more readable format.
 
-Cleaned dataset: <insert kaggle link here>
+Cleaned dataset: https://www.kaggle.com/datasets/ryanwong1/new-york-city-job-postings-2024
